@@ -35,6 +35,8 @@ namespace OnePortal_Api.Controllers
         private readonly string _oracleConnectionString = configuration.GetConnectionString("OracleConnection") ?? string.Empty;
         private readonly IEmailService _emailService = emailService;
         private readonly IWatermarkService _watermarkService = watermarkService;
+        private readonly string _connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
 
         [HttpGet("SupplierInfo")]
         [TypeFilter(typeof(CustomAuthorizationFilter))]
@@ -2210,6 +2212,23 @@ namespace OnePortal_Api.Controllers
                 var customMessage = match.Success ? match.Groups[1].Value.Trim() : "An error occurred in Oracle.";
                 return StatusCode(409, new { message = customMessage });
             }
+        }
+
+        [HttpGet("findTimeSuccessBySupplierID")]
+        [TypeFilter(typeof(CustomAuthorizationFilter))]
+        public async Task<IActionResult> FindTimeSuccessBySupplierID(int id)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            var results = await connection.QueryAsync<dynamic>(
+                "EXEC [dbo].[GetTimeSuccessBySupplierID] @SupplierID",
+                new { SupplierID = id });
+
+            if (results == null || !results.Any())
+            {
+                return NotFound("No election details found for the specified SupplierID.");
+            }
+
+            return Ok(results);
         }
     }
 }

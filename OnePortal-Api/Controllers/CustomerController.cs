@@ -1,18 +1,19 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Data;
+using System.Text;
+using System.Text.RegularExpressions;
+using Aspose.Pdf;
+using Dapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using OnePortal_Api.Data;
 using OnePortal_Api.Dto;
+using OnePortal_Api.Filters;
 using OnePortal_Api.Model;
 using OnePortal_Api.Services;
 using Oracle.ManagedDataAccess.Client;
-using System.Data;
-using System.Text.RegularExpressions;
 using Oracle.ManagedDataAccess.Types;
-using Newtonsoft.Json;
-using System.Text;
-using OnePortal_Api.Filters;
-using Aspose.Pdf;
 
 namespace OnePortal_Api.Controllers
 {
@@ -33,6 +34,8 @@ namespace OnePortal_Api.Controllers
         private readonly string _oracleConnectionString = configuration.GetConnectionString("OracleConnection") ?? string.Empty;
         private readonly IEmailService _emailService = emailService;
         private readonly IWatermarkService _watermarkService = watermarkService;
+        private readonly string _connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
 
         [HttpGet("CustomerInfo")]
         [TypeFilter(typeof(CustomAuthorizationFilter))]
@@ -816,6 +819,23 @@ namespace OnePortal_Api.Controllers
             {
                 return StatusCode(500, $"Query failed: {ex.Message}");
             }
+        }
+
+        [HttpGet("findTimeSuccessByCustomerId")]
+        [TypeFilter(typeof(CustomAuthorizationFilter))]
+        public async Task<IActionResult> FindTimeSuccessByCustomerId(int id)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            var results = await connection.QueryAsync<dynamic>(
+                "EXEC [dbo].[GetTimeSuccessByCustomerId] @CustomerId",
+                new { CustomerId = id });
+
+            if (results == null || !results.Any())
+            {
+                return NotFound("No election details found for the specified CustomerID.");
+            }
+
+            return Ok(results);
         }
     }
 }
