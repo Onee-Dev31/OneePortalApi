@@ -47,4 +47,21 @@ OnePortal-Api/obj/Debug/net8.0/
 
 OnePortal-Api/obj/
 
-OnePortal-Api/
+
+.vs/OnePortal-Api/FileContentIndex/
+
+OnePortal-Api/.config/
+
+OnePortal-Api/.vs/OnePortal-Api/FileContentIndex/
+
+OnePortal-Api/bin/Debug/net8.0/
+
+OnePortal-Api/bin/Release/net8.0/
+
+*.csproj
+
+*.user
+
+*.http
+
+*.pdf
