@@ -113,6 +113,8 @@ namespace OnePortal_Api.Controllers
                 var result = await command.ExecuteScalarAsync();
                 var customerId = Convert.ToInt32(result);
 
+                await SyncCustomerDataToOracle(customerId, customerDto);
+
                 return Ok(new { customer_id = customerId, message = "Customer added successfully" });
             }
             catch (Exception ex)
@@ -289,6 +291,24 @@ namespace OnePortal_Api.Controllers
                 {
                     return NotFound();
                 }
+
+                var latestCustomer = await _appDbContext.Customer
+                                            .AsNoTracking()
+                                            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+                if (latestCustomer == null)
+                {
+                    return NotFound();
+                }
+                
+                var syncDto = MapCustomerToDto(existingCustomer);
+
+                // Set CustomerNum ก่อนส่งเนื่องจากมันเป็นการ gen จาก Sp
+                syncDto.CustomerNum = latestCustomer.CustomerNum;
+
+                // sync ไป Oracle
+                await SyncCustomerDataToOracle(existingCustomer.Id, syncDto);
+
 
                 return Ok(updatedCustomer.First());
             }
@@ -797,7 +817,7 @@ namespace OnePortal_Api.Controllers
         }
 
         [HttpGet("CustomerCountries")]
-        [TypeFilter(typeof(CustomAuthorizationFilter))] 
+        [TypeFilter(typeof(CustomAuthorizationFilter))]
         public async Task<IActionResult> CustomerCountries()
         {
             try
@@ -837,5 +857,85 @@ namespace OnePortal_Api.Controllers
 
             return Ok(results);
         }
+
+        private CustomerDto MapCustomerToDto(Customer c)
+        {
+            return new CustomerDto
+            {
+                Id = c.Id,
+                Prefix = c.Prefix,
+                Name = c.Name,
+                TaxId = c.TaxId,
+                AddressSup = c.AddressSup,
+                District = c.District,
+                Subdistrict = c.Subdistrict,
+                Province = c.Province,
+                PostalCode = c.PostalCode,
+                Tel = c.Tel,
+                Email = c.Email,
+                CustomerNum = c.CustomerNum,
+                CustomerType = c.CustomerType,
+                Site = c.Site,
+                Status = c.Status,
+                UserId = c.UserId,
+                Company = c.Company,
+                OwnerAcc = c.OwnerAcc,         
+                Path = c.Path,
+                FileReq = c.FileReq,
+                FileCertificate = c.FileCertificate,
+                PostId = c.PostId,
+                AddressDetail = c.AddressDetail,
+                LineId = c.LineId,
+                FileCertificateATR = c.FileCertificateATR,
+                FileOrther = c.FileOrther,
+                IsAddressOld = c.IsAddressOld,
+                Country = c.Country
+            };
+        }
+
+        private async Task SyncCustomerDataToOracle(int customerId, CustomerDto customer)
+        {
+            using var oracleConnection = new OracleConnection(_oracleConnectionString);
+            await oracleConnection.OpenAsync();
+
+            using var oracleCommand = new OracleCommand("SP_UPSERT_XONE_CUSTOMER_INFO", oracleConnection)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            oracleCommand.Parameters.Add("p_ID", OracleDbType.Int32).Value = customerId;
+            oracleCommand.Parameters.Add("p_PREFIX", OracleDbType.Varchar2).Value = (object?)customer.Prefix ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_NAME", OracleDbType.Varchar2).Value = (object?)customer.Name ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_TAXID", OracleDbType.Varchar2).Value = (object?)customer.TaxId ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_ADDRESSSUP", OracleDbType.Varchar2).Value = (object?)customer.AddressSup ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_ADDRESSDETAIL", OracleDbType.Varchar2).Value = (object?)customer.AddressDetail ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_SUBDISTRICT", OracleDbType.Varchar2).Value = (object?)customer.Subdistrict ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_DISTRICT", OracleDbType.Varchar2).Value = (object?)customer.District ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_PROVINCE", OracleDbType.Varchar2).Value = (object?)customer.Province ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_POSTALCODE", OracleDbType.Varchar2).Value = (object?)customer.PostalCode ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_TEL", OracleDbType.Varchar2).Value = (object?)customer.Tel ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_EMAIL", OracleDbType.Varchar2).Value = (object?)customer.Email ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_CUSTOMERNUM", OracleDbType.Varchar2).Value = (object?)customer.CustomerNum ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_CUSTOMERTYPE", OracleDbType.Varchar2).Value = (object?)customer.CustomerType ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_SITE", OracleDbType.Varchar2).Value = (object?)customer.Site ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_STATUS", OracleDbType.Varchar2).Value = (object?)customer.Status ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_USERID", OracleDbType.Int32).Value = customer.UserId;
+            oracleCommand.Parameters.Add("p_COMPANY", OracleDbType.Varchar2).Value = (object?)customer.Company ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_FILEREQ", OracleDbType.Varchar2).Value = (object?)customer.FileReq ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_FILECERTIFICATE", OracleDbType.Varchar2).Value = (object?)customer.FileCertificate ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_PATH", OracleDbType.Varchar2).Value = (object?)customer.Path ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_POSTID", OracleDbType.Int32).Value = (object?)customer.PostId ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_LINEID", OracleDbType.Varchar2).Value = (object?)customer.LineId ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_FILECERTIFICATEATR", OracleDbType.Varchar2).Value = (object?)customer.FileCertificateATR ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_FILEORTHER", OracleDbType.Varchar2).Value = (object?)customer.FileOrther ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_ISADDRESSOLD", OracleDbType.Varchar2).Value = (object?)customer.IsAddressOld ?? DBNull.Value;
+            oracleCommand.Parameters.Add("p_COUNTRY", OracleDbType.Varchar2).Value = (object?)customer.Country ?? DBNull.Value;
+
+            await oracleCommand.ExecuteNonQueryAsync();
+        }
+
+
     }
+
+
 }
