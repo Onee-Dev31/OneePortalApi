@@ -26,7 +26,7 @@ namespace OnePortal_Api.Controllers
         IGroupService groupService,
         IConfiguration configuration,
         IEmailService emailService,
-        IWatermarkService watermarkService) : Controller
+        IWatermarkIText7Service watermarkService) : Controller
     {
         private readonly ISupplierService _supplierService = supplierService;
         private readonly AppDbContext _appDbContext = appDbContext;
@@ -34,7 +34,9 @@ namespace OnePortal_Api.Controllers
         private readonly IGroupService _groupService = groupService;
         private readonly string _oracleConnectionString = configuration.GetConnectionString("OracleConnection") ?? string.Empty;
         private readonly IEmailService _emailService = emailService;
-        private readonly IWatermarkService _watermarkService = watermarkService;
+        //private readonly IWatermarkService _watermarkService = watermarkService;
+        private readonly IWatermarkIText7Service _watermarkService = watermarkService;
+
         private readonly string _connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 
@@ -1863,7 +1865,7 @@ namespace OnePortal_Api.Controllers
                     }
                     else if (fileExtension == ".pdf")
                     {
-                        uploadPathFix = await _watermarkService.AddWatermarkToPdfAspose(file, "Confidential", groupName);
+                        uploadPathFix = await _watermarkService.AddWatermarkToPdf(file, "Confidential", groupName);
                         //uploadPathFix = await _watermarkService.AddWatermarkToPdf(file, "Confidential", "center", 100, groupName);
                     }
                     else
@@ -1965,16 +1967,16 @@ namespace OnePortal_Api.Controllers
 
                             memoryStream.Position = 0;
 
-                            if (pageCount > 4)
-                            {
-                                using var stream = new FileStream(filePath, FileMode.Create);
-                                memoryStream.Position = 0;
-                                await memoryStream.CopyToAsync(stream);
-                            }
-                            else
-                            {
-                                filePath = await _watermarkService.AddWatermarkToPdfAspose(file, "Confidential", folderName);
-                            }
+                            //if (pageCount > 4)
+                            //{
+                            //    using var stream = new FileStream(filePath, FileMode.Create);
+                            //    memoryStream.Position = 0;
+                            //    await memoryStream.CopyToAsync(stream);
+                            //}
+                            //else
+                            //{
+                                filePath = await _watermarkService.AddWatermarkToPdf(file, "Confidential", folderName);
+                            //}
 
                             uploadPathFix = Path.Combine("uploads", folderName, Path.GetFileName(filePath));
                         }

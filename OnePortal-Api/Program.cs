@@ -31,6 +31,7 @@ builder.Services.AddTransient<IGroupService, GroupService>();
 builder.Services.AddTransient<ISupplierFileService, SupplierFileService>();
 builder.Services.AddTransient<ITempNumKeyService, TempNumKeyService>();
 builder.Services.AddScoped<IWatermarkService, WatermarkServiceAspose>();
+builder.Services.AddScoped<IWatermarkIText7Service, WatermarkServiceIText7>();
 
 builder.Services.AddScoped<CustomAuthorizationFilter>();
 
