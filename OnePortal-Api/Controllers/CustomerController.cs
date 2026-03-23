@@ -100,14 +100,16 @@ namespace OnePortal_Api.Controllers
                     new SqlParameter("@FileCertificateATR", customerDto.FileCertificateATR ?? (object)DBNull.Value),
                     new SqlParameter("@FileOrther", customerDto.FileOrther ?? (object)DBNull.Value),
                     new SqlParameter("@IsAddressOld", customerDto.IsAddressOld ?? (object)DBNull.Value),
-                    new SqlParameter("@Country", customerDto.Country ?? (object)DBNull.Value)
+                    new SqlParameter("@Country", customerDto.Country ?? (object)DBNull.Value),
+                    new SqlParameter("@CustomerTypeGroup", customerDto.CustomerTypeGroup ?? (object)DBNull.Value),
+
                 };
 
                 var connection = _appDbContext.Database.GetDbConnection();
                 await connection.OpenAsync();
 
                 using var command = connection.CreateCommand();
-                command.CommandText = "EXEC AddCustomer @Prefix, @Name, @TaxId, @AddressSup, @District, @Subdistrict, @Province, @PostalCode, @Tel, @Email, @CustomerNum, @CustomerType, @Site, @Status, @Company, @UserId, @PostId, @Path, @FileReq, @FileCertificate,@AddressDetail,@LineId,@FileCertificateATR,@FileOrther,@IsAddressOld,@Country; SELECT SCOPE_IDENTITY()";
+                command.CommandText = "EXEC AddCustomer @Prefix, @Name, @TaxId, @AddressSup, @District, @Subdistrict, @Province, @PostalCode, @Tel, @Email, @CustomerNum, @CustomerType, @Site, @Status, @Company, @UserId, @PostId, @Path, @FileReq, @FileCertificate,@AddressDetail,@LineId,@FileCertificateATR,@FileOrther,@IsAddressOld,@Country,@CustomerTypeGroup; SELECT SCOPE_IDENTITY()";
                 command.Parameters.AddRange(parameters);
 
                 var result = await command.ExecuteScalarAsync();
@@ -253,6 +255,8 @@ namespace OnePortal_Api.Controllers
                 existingCustomer.FileOrther = customerDto.FileOrther ?? existingCustomer.FileOrther;
                 existingCustomer.IsAddressOld = customerDto.IsAddressOld ?? existingCustomer.IsAddressOld;
                 existingCustomer.Country = customerDto.Country ?? existingCustomer.Country;
+                existingCustomer.CustomerTypeGroup = customerDto.CustomerTypeGroup ?? existingCustomer.CustomerTypeGroup;
+
                 var parameters = new[]
                 {
                     new SqlParameter("@Id", existingCustomer.Id),
@@ -280,11 +284,12 @@ namespace OnePortal_Api.Controllers
                     new SqlParameter("@FileCertificateATR", existingCustomer.FileCertificateATR ?? (object)DBNull.Value),
                     new SqlParameter("@FileOrther", existingCustomer.FileOrther ?? (object)DBNull.Value),
                     new SqlParameter("@IsAddressOld", existingCustomer.IsAddressOld ?? (object)DBNull.Value),
-                    new SqlParameter("@Country", existingCustomer.Country ?? (object)DBNull.Value)
+                    new SqlParameter("@Country", existingCustomer.Country ?? (object)DBNull.Value),
+                    new SqlParameter("@CustomerTypeGroup", existingCustomer.CustomerTypeGroup ?? (object)DBNull.Value)
                 };
 
                 var updatedCustomer = await _appDbContext.Customer
-                    .FromSqlRaw("EXEC UpdateCustomer @Id, @Prefix, @Name, @TaxId, @AddressSup, @District, @Subdistrict, @Province, @PostalCode, @Tel, @Email, @CustomerNum, @CustomerType, @Site, @Status, @Path, @FileReq, @FileCertificate, @Company,@UserId, @AddressDetail, @LineId, @FileCertificateATR, @FileOrther, @IsAddressOld, @Country", parameters)
+                    .FromSqlRaw("EXEC UpdateCustomer @Id, @Prefix, @Name, @TaxId, @AddressSup, @District, @Subdistrict, @Province, @PostalCode, @Tel, @Email, @CustomerNum, @CustomerType, @Site, @Status, @Path, @FileReq, @FileCertificate, @Company,@UserId, @AddressDetail, @LineId, @FileCertificateATR, @FileOrther, @IsAddressOld, @Country, @CustomerTypeGroup", parameters)
                     .ToListAsync(cancellationToken);
 
                 if (updatedCustomer == null || updatedCustomer.Count == 0)
@@ -300,7 +305,7 @@ namespace OnePortal_Api.Controllers
                 {
                     return NotFound();
                 }
-                
+
                 var syncDto = MapCustomerToDto(existingCustomer);
 
                 // Set CustomerNum ก่อนส่งเนื่องจากมันเป็นการ gen จาก Sp
@@ -858,6 +863,31 @@ namespace OnePortal_Api.Controllers
             return Ok(results);
         }
 
+        [HttpGet("CustomerTypeGroup")]
+        [TypeFilter(typeof(CustomAuthorizationFilter))]
+        public async Task<IActionResult> CustomerTypeGroup()
+        {
+            try
+            {
+                var typeGroups = await _appDbContext.customertypegroup
+                    .FromSqlRaw("EXEC GetAllCustomerTypeGroup")
+                    .ToListAsync();
+
+                if (typeGroups != null && typeGroups.Count != 0)
+                {
+                    return Ok(typeGroups);
+                }
+                else
+                {
+                    return NotFound("No countries data found.");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Query failed: {ex.Message}");
+            }
+        }
+
         private CustomerDto MapCustomerToDto(Customer c)
         {
             return new CustomerDto
@@ -879,7 +909,7 @@ namespace OnePortal_Api.Controllers
                 Status = c.Status,
                 UserId = c.UserId,
                 Company = c.Company,
-                OwnerAcc = c.OwnerAcc,         
+                OwnerAcc = c.OwnerAcc,
                 Path = c.Path,
                 FileReq = c.FileReq,
                 FileCertificate = c.FileCertificate,
@@ -889,7 +919,8 @@ namespace OnePortal_Api.Controllers
                 FileCertificateATR = c.FileCertificateATR,
                 FileOrther = c.FileOrther,
                 IsAddressOld = c.IsAddressOld,
-                Country = c.Country
+                Country = c.Country,
+                CustomerTypeGroup = c.CustomerTypeGroup
             };
         }
 
@@ -930,7 +961,7 @@ namespace OnePortal_Api.Controllers
             oracleCommand.Parameters.Add("p_FILEORTHER", OracleDbType.Varchar2).Value = (object?)customer.FileOrther ?? DBNull.Value;
             oracleCommand.Parameters.Add("p_ISADDRESSOLD", OracleDbType.Varchar2).Value = (object?)customer.IsAddressOld ?? DBNull.Value;
             oracleCommand.Parameters.Add("p_COUNTRY", OracleDbType.Varchar2).Value = (object?)customer.Country ?? DBNull.Value;
-
+            oracleCommand.Parameters.Add("p_CUSTOMER_TYPE_GROUP", OracleDbType.Varchar2).Value = (object?)customer.CustomerTypeGroup ?? DBNull.Value;
             await oracleCommand.ExecuteNonQueryAsync();
         }
 

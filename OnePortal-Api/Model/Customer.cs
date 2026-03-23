@@ -33,5 +33,7 @@ namespace OnePortal_Api.Model
         public string? FileOrther { get; set; }
         public string? IsAddressOld { get; set; }
         public string? Country { get; set; }
+        public string? CustomerTypeGroup { get; set; }
+
     }
 }

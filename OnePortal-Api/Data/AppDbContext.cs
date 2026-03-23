@@ -32,8 +32,8 @@ namespace OnePortal_Api.Data
         public DbSet<EmailLog> EmailLogs { get; set; }
         public DbSet<MasterContent> masterContents { get; set; }
         public DbSet<Announcement_Consent> announcement_Consents { get; set; }
-
         public DbSet<Countries> countries { get; set; }
+        public DbSet<CustomerTypeGroup> customertypegroup { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<User>()
@@ -59,6 +59,8 @@ namespace OnePortal_Api.Data
             modelBuilder.Entity<MasterContent>().ToTable("MasterContent", "dbo");
             modelBuilder.Entity<Announcement_Consent>().ToTable("Announcement_Consent", "dbo");
             modelBuilder.Entity<Countries>().ToTable("Countries", "dbo");
+            modelBuilder.Entity<CustomerTypeGroup>().ToTable("MS_CUSTOMER_TYPE_GROUP", "dbo");
+
             modelBuilder.Entity<Group>()
         .HasMany(g => g.GroupDetails)
         .WithOne(gd => gd.Group)
