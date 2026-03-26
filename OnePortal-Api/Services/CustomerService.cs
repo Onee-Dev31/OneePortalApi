@@ -119,22 +119,22 @@ namespace OnePortal_Api.Services
             return customer;
         }
 
-        public async Task<List<CustomerSupplierDto?>> GetCustomerSupplierHistory(int userId, string? company, string? status, string? ownerType, CancellationToken cancellationToken = default)
+        public async Task<List<CustomerSupplierDto>> GetCustomerSupplierHistory(int userId, string? company, string? status, string? ownerType,CancellationToken cancellationToken = default)
         {
             var parameters = new[]
             {
-                new SqlParameter("@UserId", userId == 0 ? (object)DBNull.Value : userId),
-                new SqlParameter("@CompanyList", string.IsNullOrEmpty(company) ? (object)DBNull.Value : company),
-                new SqlParameter("@Status", string.IsNullOrEmpty(status) ? (object)DBNull.Value : status),
-                new SqlParameter("@OwnerType", string.IsNullOrEmpty(ownerType) ? (object)DBNull.Value : ownerType)
-            };
+        new SqlParameter("@UserId", userId == 0 ? (object)DBNull.Value : userId),
+        new SqlParameter("@CompanyList", string.IsNullOrEmpty(company) ? (object)DBNull.Value : company),
+        new SqlParameter("@Status", string.IsNullOrEmpty(status) ? (object)DBNull.Value : status),
+        new SqlParameter("@OwnerType", string.IsNullOrEmpty(ownerType) ? (object)DBNull.Value : ownerType)
+    };
 
-            var result = await _context
-                .CustomerSupplierDto
+            var result = await _context.CustomerSupplierDto
                 .FromSqlRaw("EXEC [dbo].[GetCustomerSupplierHistory] @UserId, @CompanyList, @Status, @OwnerType", parameters)
+                .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
-            return result.Cast<CustomerSupplierDto?>().ToList();
+            return result;
         }
 
         public async Task<List<CustomerSupplierDto?>> GetDataHistoryByUserId(int userId, string? company)
