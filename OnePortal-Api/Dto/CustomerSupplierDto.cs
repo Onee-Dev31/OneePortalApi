@@ -27,6 +27,9 @@
         public string? OwnerAccName { get; set; }
         public string? OwnerFnName { get; set; }
         public string? RejectReason { get; set; }
+        public string? AccountNum { get; set; }
+        public string? BankName { get; set; }
+        public string? AccountName { get; set; }
 
     }
 }
