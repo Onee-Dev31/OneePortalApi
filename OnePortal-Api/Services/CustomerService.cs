@@ -119,15 +119,16 @@ namespace OnePortal_Api.Services
             return customer;
         }
 
+
         public async Task<List<CustomerSupplierDto>> GetCustomerSupplierHistory(int userId, string? company, string? status, string? ownerType,CancellationToken cancellationToken = default)
         {
             var parameters = new[]
             {
-        new SqlParameter("@UserId", userId == 0 ? (object)DBNull.Value : userId),
-        new SqlParameter("@CompanyList", string.IsNullOrEmpty(company) ? (object)DBNull.Value : company),
-        new SqlParameter("@Status", string.IsNullOrEmpty(status) ? (object)DBNull.Value : status),
-        new SqlParameter("@OwnerType", string.IsNullOrEmpty(ownerType) ? (object)DBNull.Value : ownerType)
-    };
+                new SqlParameter("@UserId", userId == 0 ? (object)DBNull.Value : userId),
+                new SqlParameter("@CompanyList", string.IsNullOrEmpty(company) ? (object)DBNull.Value : company),
+                new SqlParameter("@Status", string.IsNullOrEmpty(status) ? (object)DBNull.Value : status),
+                new SqlParameter("@OwnerType", string.IsNullOrEmpty(ownerType) ? (object)DBNull.Value : ownerType)
+            };
 
             var result = await _context.CustomerSupplierDto
                 .FromSqlRaw("EXEC [dbo].[GetCustomerSupplierHistory] @UserId, @CompanyList, @Status, @OwnerType", parameters)
@@ -135,6 +136,41 @@ namespace OnePortal_Api.Services
                 .ToListAsync(cancellationToken);
 
             return result;
+        }
+
+        public async Task<PagedResult<CustomerSupplierDto>> GetCustomerSupplierHistoryNew(
+            int userId,
+            string? company,
+            string? status,
+            string? ownerType,
+            int pageNumber,
+            int pageSize,
+            CancellationToken cancellationToken = default)
+        {
+            var parameters = new[]
+            {
+                new SqlParameter("@UserId", userId == 0 ? (object)DBNull.Value : userId),
+                new SqlParameter("@CompanyList", string.IsNullOrEmpty(company) ? (object)DBNull.Value : company),
+                new SqlParameter("@Status", string.IsNullOrEmpty(status) ? (object)DBNull.Value : status),
+                new SqlParameter("@OwnerType", string.IsNullOrEmpty(ownerType) ? (object)DBNull.Value : ownerType),
+                new SqlParameter("@PageNumber", pageNumber),
+                new SqlParameter("@PageSize", pageSize)
+            };
+
+            var result = await _context.CustomerSupplierDto
+                .FromSqlRaw("EXEC [dbo].[GetCustomerSupplierHistoryNew] @UserId, @CompanyList, @Status, @OwnerType, @PageNumber, @PageSize", parameters)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            var totalCount = result.FirstOrDefault()?.TotalCount ?? 0;
+
+            return new PagedResult<CustomerSupplierDto>
+            {
+                Data = result,
+                Page = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            };
         }
 
         public async Task<List<CustomerSupplierDto?>> GetDataHistoryByUserId(int userId, string? company)

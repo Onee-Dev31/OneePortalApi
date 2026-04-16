@@ -19,6 +19,14 @@ namespace OnePortal_Api.Services
         Task<List<CustomerSupplierDto?>> GetDataHistoryByApprover(int userId, string? company, string status);
         Task<List<CustomerSupplierDto?>> GetDataHistoryByApproverFN(int userId, string? company, string status);
         Task<List<CustomerSupplierDto?>> GetCustomerSupplierHistory(int userId, string? company, string? status, string? ownerType, CancellationToken cancellationToken = default);
+        Task<PagedResult<CustomerSupplierDto>> GetCustomerSupplierHistoryNew(
+            int userId,
+            string? company,
+            string? status,
+            string? ownerType,
+            int pageNumber,
+            int pageSize,
+            CancellationToken cancellationToken = default);
     }
 }
 

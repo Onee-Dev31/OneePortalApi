@@ -483,22 +483,40 @@ namespace OnePortal_Api.Controllers
 
         [HttpGet("GetCustomerSupplierHistory")]
         [TypeFilter(typeof(CustomAuthorizationFilter))]
-        public async Task<ActionResult<List<CustomerSupplierDto>>> GetCustomerSupplierHistory(
-        int? userId, string? company, string? status, string? ownerType, CancellationToken cancellationToken = default)
+        public async Task<ActionResult<PagedResult<CustomerSupplierDto>>> GetCustomerSupplierHistory(
+    int? userId,
+    string? company,
+    string? status,
+    string? ownerType,
+    int pageNumber = 1,
+    int pageSize = 20,
+    CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _customerService.GetCustomerSupplierHistory(
+                if (pageNumber <= 0) pageNumber = 1;
+                if (pageSize <= 0) pageSize = 20;
+                if (pageSize > 100) pageSize = 100;
+
+                var result = await _customerService.GetCustomerSupplierHistoryNew(
                     userId ?? 0,
                     string.IsNullOrEmpty(company) ? null : company,
                     string.IsNullOrEmpty(status) ? null : status,
                     string.IsNullOrEmpty(ownerType) ? null : ownerType,
+                    pageNumber,
+                    pageSize,
                     cancellationToken
                 );
 
-                if (result == null || result.Count == 0)
+                if (result.Data == null || result.Data.Count == 0)
                 {
-                    return NotFound("No data found.");
+                    return Ok(new PagedResult<CustomerSupplierDto>
+                    {
+                        Data = new List<CustomerSupplierDto>(),
+                        Page = pageNumber,
+                        PageSize = pageSize,
+                        TotalCount = 0
+                    });
                 }
 
                 return Ok(result);
