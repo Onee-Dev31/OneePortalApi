@@ -256,6 +256,7 @@ namespace OnePortal_Api.Controllers
                 existingCustomer.IsAddressOld = customerDto.IsAddressOld ?? existingCustomer.IsAddressOld;
                 existingCustomer.Country = customerDto.Country ?? existingCustomer.Country;
                 existingCustomer.CustomerTypeGroup = customerDto.CustomerTypeGroup ?? existingCustomer.CustomerTypeGroup;
+                existingCustomer.PostId = customerDto.PostId ?? existingCustomer.PostId;
 
                 var parameters = new[]
                 {
@@ -285,11 +286,12 @@ namespace OnePortal_Api.Controllers
                     new SqlParameter("@FileOrther", existingCustomer.FileOrther ?? (object)DBNull.Value),
                     new SqlParameter("@IsAddressOld", existingCustomer.IsAddressOld ?? (object)DBNull.Value),
                     new SqlParameter("@Country", existingCustomer.Country ?? (object)DBNull.Value),
-                    new SqlParameter("@CustomerTypeGroup", existingCustomer.CustomerTypeGroup ?? (object)DBNull.Value)
+                    new SqlParameter("@CustomerTypeGroup", existingCustomer.CustomerTypeGroup ?? (object)DBNull.Value),
+                    new SqlParameter("@PostId", existingCustomer.PostId ?? (object)DBNull.Value),
                 };
 
                 var updatedCustomer = await _appDbContext.Customer
-                    .FromSqlRaw("EXEC UpdateCustomer @Id, @Prefix, @Name, @TaxId, @AddressSup, @District, @Subdistrict, @Province, @PostalCode, @Tel, @Email, @CustomerNum, @CustomerType, @Site, @Status, @Path, @FileReq, @FileCertificate, @Company,@UserId, @AddressDetail, @LineId, @FileCertificateATR, @FileOrther, @IsAddressOld, @Country, @CustomerTypeGroup", parameters)
+                    .FromSqlRaw("EXEC UpdateCustomer @Id, @Prefix, @Name, @TaxId, @AddressSup, @District, @Subdistrict, @Province, @PostalCode, @Tel, @Email, @CustomerNum, @CustomerType, @Site, @Status, @Path, @FileReq, @FileCertificate, @Company,@UserId, @AddressDetail, @LineId, @FileCertificateATR, @FileOrther, @IsAddressOld, @Country, @CustomerTypeGroup, @PostId", parameters)
                     .ToListAsync(cancellationToken);
 
                 if (updatedCustomer == null || updatedCustomer.Count == 0)
