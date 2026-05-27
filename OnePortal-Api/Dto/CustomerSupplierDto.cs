@@ -5,7 +5,7 @@
         public int Id { get; set; }
         public required string Name { get; set; }
         public required string TaxId { get; set; }
-        public required string AddressSup { get; set; }
+        public required string? AddressSup { get; set; }
         public required string District { get; set; }
         public required string Subdistrict { get; set; }
         public required string Province { get; set; }
