@@ -1383,35 +1383,22 @@ namespace OnePortal_Api.Controllers
             try
             {
                 var codeFrom = string.Empty;
-                string sqlServerMessage = "No duplicate supplier found.";
-
-                using (var sqlConnection = new SqlConnection(_appDbContext.Database.GetConnectionString()))
+                if (newSupplierDto.SupplierType == "OSEA")
                 {
-                    using var sqlCommand = new SqlCommand("GetSupplierCodeFromType", sqlConnection)
-                    {
-                        CommandType = CommandType.StoredProcedure
-                    };
-
-                    sqlCommand.Parameters.AddWithValue("@SupplierType", newSupplierDto.SupplierType);
-                    var codeFromOutput = new SqlParameter("@CodeFrom", SqlDbType.NVarChar, 50) { Direction = ParameterDirection.Output };
-                    sqlCommand.Parameters.Add(codeFromOutput);
-
-                    await sqlConnection.OpenAsync();
-                    await sqlCommand.ExecuteNonQueryAsync();
-                    codeFrom = codeFromOutput.Value?.ToString();
-
-                    if (string.IsNullOrEmpty(codeFrom))
-                    {
-                        return BadRequest("ไม่พบ code_from สำหรับ SupplierType ที่ระบุ");
-                    }
+                    codeFrom = "2F";
                 }
+
+                string sqlServerMessage = "No duplicate supplier found.";
 
                 try
                 {
-                    using var oracleConnection = new OracleConnection(_oracleConnectionString);
+                    var oracleConnectionString = _oracleConnectionString + ";Connection Timeout=10";
+                    using var oracleConnection = new OracleConnection(oracleConnectionString);
+
                     using var oracleCommand = new OracleCommand("CHECK_DUPLICATE_SUPPLIER_ORACLE", oracleConnection)
                     {
-                        CommandType = CommandType.StoredProcedure
+                        CommandType = CommandType.StoredProcedure,
+                        CommandTimeout = 10
                     };
 
                     oracleCommand.Parameters.Add("p_tax", OracleDbType.Varchar2).Value = newSupplierDto.TaxId;
@@ -1427,7 +1414,7 @@ namespace OnePortal_Api.Controllers
                 {
                     var match = OracleErrorMessageRegex().Match(ex.Message);
                     var customMessage = match.Success ? match.Groups[1].Value.Trim() : "An error occurred in Oracle.";
-                    return StatusCode(409, $"{customMessage}");
+                    return StatusCode(409, customMessage); // ยังคง return JSON string จาก Oracle SP อยู่แล้ว
                 }
 
                 using (var sqlConnection = new SqlConnection(_appDbContext.Database.GetConnectionString()))
@@ -1449,7 +1436,7 @@ namespace OnePortal_Api.Controllers
                     catch (SqlException ex) when (ex.Number == 50000)
                     {
                         sqlServerMessage = ex.Message;
-                        return Conflict(sqlServerMessage);
+                        return Conflict(new { message = sqlServerMessage, source = "sql" });
                     }
                 }
 
