@@ -652,6 +652,7 @@ namespace OnePortal_Api.Controllers
                             responseFromOracle = new
                             {
                                 CustomerName = readerX2["CUSTOMER_NAME"]?.ToString(),
+                                CustomerNum = readerX2["CUSTOMER_NUMBER"]?.ToString(),
                                 TaxReference = readerX2["TAX_REFERENCE"]?.ToString(),
                                 Address1 = readerX2["ADDRESS1"]?.ToString(),
                                 Address2 = readerX2["ADDRESS2"]?.ToString(),
